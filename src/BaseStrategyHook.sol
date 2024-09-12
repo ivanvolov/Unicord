@@ -102,15 +102,6 @@ abstract contract BaseStrategyHook is BaseHook, MainDemoConsumerBase, IALM {
         return CMathLib.getTickFromSqrtPrice(sqrtPriceCurrent);
     }
 
-    //TODO: remove in production
-    function logBalances() internal view {
-        console.log("> hook balances");
-        if (USDC.balanceOf(address(this)) > 0)
-            console.log("USDC  ", USDC.balanceOf(address(this)));
-        if (DAI.balanceOf(address(this)) > 0)
-            console.log("DAI  ", DAI.balanceOf(address(this)));
-    }
-
     // --- Morpho Wrappers ---
     function morphoWithdrawCollateral(
         Id morphoMarketId,
@@ -134,18 +125,6 @@ abstract contract BaseStrategyHook is BaseHook, MainDemoConsumerBase, IALM {
             address(this),
             ZERO_BYTES
         );
-    }
-
-    function suppliedCollateral(
-        Id morphoMarketId,
-        address owner
-    ) internal view returns (uint256) {
-        MorphoPosition memory p = morpho.position(morphoMarketId, owner);
-        return p.collateral;
-    }
-
-    function morphoSync(Id morphoMarketId) internal {
-        morpho.accrueInterest(morpho.idToMarketParams(morphoMarketId));
     }
 
     /// @dev Only the hook deployer may call this function

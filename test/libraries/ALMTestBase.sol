@@ -17,7 +17,6 @@ import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
 
 import {TestERC20} from "v4-core/test/TestERC20.sol";
 import {Deployers} from "@uniswap/v4-core/test/utils/Deployers.sol";
-import {HookEnabledSwapRouter} from "@test/libraries/HookEnabledSwapRouter.sol";
 import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol";
 import {MorphoBalancesLib} from "@forks/morpho/libraries/MorphoBalancesLib.sol";
 
@@ -34,7 +33,6 @@ abstract contract ALMTestBase is Test, Deployers {
     TestAccount alice;
     TestAccount swapper;
 
-    HookEnabledSwapRouter router;
     Id dDAImId;
     Id dUSDCmId;
     IMorpho morpho = IMorpho(0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb);
@@ -62,8 +60,6 @@ abstract contract ALMTestBase is Test, Deployers {
         vm.stopPrank();
 
         vm.startPrank(swapper.addr);
-        USDC.approve(address(router), type(uint256).max);
-        DAI.approve(address(router), type(uint256).max);
         USDC.approve(address(swapRouter), type(uint256).max);
         DAI.approve(address(swapRouter), type(uint256).max);
         vm.stopPrank();

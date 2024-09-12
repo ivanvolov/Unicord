@@ -6,7 +6,6 @@ import "forge-std/console.sol";
 
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
-import {HookEnabledSwapRouter} from "@test/libraries/HookEnabledSwapRouter.sol";
 import {ALMTestBase} from "@test/libraries/ALMTestBase.sol";
 import {ErrorsLib} from "@forks/morpho/libraries/ErrorsLib.sol";
 
@@ -52,7 +51,7 @@ contract ALMTest is ALMTestBase {
     }
 
     function test_swap_price_up_in() public {
-        uint256 usdcToSwap = 1000 * 1e6;
+        uint256 usdcToSwap = 100 * 1e6;
         test_deposit();
 
         deal(address(USDC), address(swapper.addr), usdcToSwap);
@@ -103,25 +102,61 @@ contract ALMTest is ALMTestBase {
         );
     }
 
-    // function test_swap_price_down() public {
-    //     uint256 daiToSwap = 1 ether / 5;
-    //     test_deposit();
+    function test_swap_price_down_in() public {
+        uint256 daiToSwap = 100 ether;
+        test_deposit();
 
-    //     deal(address(DAI), address(swapper.addr), daiToSwap);
-    //     assertEqBalanceState(swapper.addr, daiToSwap, 0);
+        deal(address(DAI), address(swapper.addr), daiToSwap);
+        assertEqBalanceState(swapper.addr, daiToSwap, 0);
 
-    //     (uint256 deltaUSDC, ) = swapDAI_USDC_In(daiToSwap);
-    //     assertEq(deltaUSDC, 887490956);
+        (, uint256 deltaUSDC) = swapDAI_USDC_In(daiToSwap);
+        assertApproxEqAbs(deltaUSDC, 99952317, 1e1);
 
-    //     assertEqBalanceState(swapper.addr, 0, deltaUSDC);
-    //     assertEqBalanceState(address(hook), 0, 0);
-    // }
+        assertEqBalanceState(swapper.addr, 0, deltaUSDC);
+        assertEqBalanceState(address(hook), 0, 0);
+
+        assertEqMorphoA(dDAImId, address(hook), 0, 0, amountToDep0 + daiToSwap);
+        assertEqMorphoA(
+            dUSDCmId,
+            address(hook),
+            0,
+            0,
+            amountToDep1 - deltaUSDC
+        );
+    }
+
+    function test_swap_price_down_out() public {
+        uint256 usdcToGetFSwap = 100 * 1e6;
+        uint256 daiToSwapQ = 100018384742682681812;
+        test_deposit();
+
+        deal(address(DAI), address(swapper.addr), daiToSwapQ);
+        assertEqBalanceState(swapper.addr, daiToSwapQ, 0);
+
+        swapDAI_USDC_Out(usdcToGetFSwap);
+
+        assertEqBalanceState(swapper.addr, 0, usdcToGetFSwap);
+        assertEqBalanceState(address(hook), 0, 0);
+
+        assertEqMorphoA(
+            dDAImId,
+            address(hook),
+            0,
+            0,
+            amountToDep0 + daiToSwapQ
+        );
+        assertEqMorphoA(
+            dUSDCmId,
+            address(hook),
+            0,
+            0,
+            amountToDep1 - usdcToGetFSwap
+        );
+    }
 
     // -- Helpers --
 
     function init_hook() internal {
-        router = new HookEnabledSwapRouter(manager);
-
         address hookAddress = address(
             uint160(
                 Hooks.BEFORE_SWAP_FLAG |

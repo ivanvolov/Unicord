@@ -116,45 +116,35 @@ contract ALM is BaseStrategyHook {
         IPoolManager.SwapParams calldata params,
         bytes calldata
     ) external override returns (bytes4, BeforeSwapDelta, uint24) {
+        (
+            BeforeSwapDelta beforeSwapDelta,
+            uint256 amountOut,
+            uint256 amountIn,
+            uint160 sqrtPriceNext
+        ) = getSwapDeltas(params.amountSpecified, params.zeroForOne);
+
         if (params.zeroForOne) {
-            console.log("> USDC price go up...");
-            (
-                BeforeSwapDelta beforeSwapDelta,
-                uint256 daiOut,
-                uint256 usdcIn,
-                uint160 sqrtPriceNext
-            ) = getSwapDeltas(params.amountSpecified, params.zeroForOne);
-            console.log("> daiOut", daiOut);
-            console.log("> usdcIn", usdcIn);
+            console.log(">> USDC price go up...");
+            console.log("> usdcOut", amountOut);
+            console.log("> daiIn", amountIn);
 
-            key.currency0.take(poolManager, address(this), usdcIn, false);
-            morphoSupplyCollateral(dDAImId, usdcIn);
-
-            redeemIfNotEnough(address(DAI), daiOut, dUSDCmId);
-            key.currency1.settle(poolManager, address(this), daiOut, false);
-
-            sqrtPriceCurrent = sqrtPriceNext;
-            return (this.beforeSwap.selector, beforeSwapDelta, 0);
+            key.currency0.take(poolManager, address(this), amountIn, false);
+            morphoSupplyCollateral(dDAImId, amountIn);
+            redeemIfNotEnough(address(USDC), amountOut, dUSDCmId);
+            key.currency1.settle(poolManager, address(this), amountOut, false);
         } else {
-            console.log("> USDC price go down...");
-            (
-                BeforeSwapDelta beforeSwapDelta,
-                uint256 daiOut,
-                uint256 usdcIn,
-                uint160 sqrtPriceNext
-            ) = getSwapDeltas(params.amountSpecified, params.zeroForOne);
-            console.log("> usdcIn", usdcIn);
-            console.log("> daiOut", daiOut);
+            console.log(">> USDC price go down...");
+            console.log("> usdcIn", amountIn);
+            console.log("> daiOut", amountOut);
 
-            key.currency1.take(poolManager, address(this), usdcIn, false);
-            morphoSupplyCollateral(dUSDCmId, usdcIn);
-
-            redeemIfNotEnough(address(DAI), daiOut, dDAImId);
-            key.currency0.settle(poolManager, address(this), daiOut, false);
-
-            sqrtPriceCurrent = sqrtPriceNext;
-            return (this.beforeSwap.selector, beforeSwapDelta, 0);
+            key.currency1.take(poolManager, address(this), amountIn, false);
+            morphoSupplyCollateral(dUSDCmId, amountIn);
+            redeemIfNotEnough(address(DAI), amountOut, dDAImId);
+            key.currency0.settle(poolManager, address(this), amountOut, false);
         }
+
+        sqrtPriceCurrent = sqrtPriceNext;
+        return (this.beforeSwap.selector, beforeSwapDelta, 0);
     }
 
     function getSwapDeltas(
