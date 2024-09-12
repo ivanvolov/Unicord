@@ -4,7 +4,6 @@ pragma solidity ^0.8.25;
 import "forge-std/console.sol";
 
 import {TickMath} from "v4-core/libraries/TickMath.sol";
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
@@ -19,7 +18,7 @@ import {BaseStrategyHook} from "@src/BaseStrategyHook.sol";
 
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {Position as MorphoPosition, Id, Market} from "@forks/morpho/IMorpho.sol";
-import {CMathLib} from "@src/libraries/CMathLib.sol";
+import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
 /// @title ALM
 /// @author IVikkk
@@ -67,21 +66,21 @@ contract ALM is BaseStrategyHook {
     ) external override returns (uint256) {
         console.log(">> deposit");
 
-        uint128 liquidity = CMathLib.getLiquidityFromAmountsSqrtPriceX96(
+        uint128 liquidity = ALMMathLib.getLiquidityFromAmountsSqrtPriceX96(
             poolsInfo[key.toId()].sqrtPriceCurrent,
-            CMathLib.getSqrtPriceAtTick(poolsInfo[key.toId()].tickUpper),
-            CMathLib.getSqrtPriceAtTick(poolsInfo[key.toId()].tickLower),
+            ALMMathLib.getSqrtPriceAtTick(poolsInfo[key.toId()].tickUpper),
+            ALMMathLib.getSqrtPriceAtTick(poolsInfo[key.toId()].tickLower),
             amount0,
             amount1
         );
 
         poolsInfo[key.toId()].totalLiquidity += liquidity;
 
-        (uint256 _amount0, uint256 _amount1) = CMathLib
+        (uint256 _amount0, uint256 _amount1) = ALMMathLib
             .getAmountsFromLiquiditySqrtPriceX96(
                 poolsInfo[key.toId()].sqrtPriceCurrent,
-                CMathLib.getSqrtPriceAtTick(poolsInfo[key.toId()].tickUpper),
-                CMathLib.getSqrtPriceAtTick(poolsInfo[key.toId()].tickLower),
+                ALMMathLib.getSqrtPriceAtTick(poolsInfo[key.toId()].tickUpper),
+                ALMMathLib.getSqrtPriceAtTick(poolsInfo[key.toId()].tickLower),
                 liquidity
             );
 
@@ -201,14 +200,14 @@ contract ALM is BaseStrategyHook {
             amountOut = uint256(amountSpecified);
 
             if (zeroForOne) {
-                (amountIn, , sqrtPriceNextX96) = CMathLib
+                (amountIn, , sqrtPriceNextX96) = ALMMathLib
                     .getSwapAmountsFromAmount1(
                         poolsInfo[poolId].sqrtPriceCurrent,
                         poolsInfo[poolId].totalLiquidity,
                         amountOut
                     );
             } else {
-                (, amountIn, sqrtPriceNextX96) = CMathLib
+                (, amountIn, sqrtPriceNextX96) = ALMMathLib
                     .getSwapAmountsFromAmount0(
                         poolsInfo[poolId].sqrtPriceCurrent,
                         poolsInfo[poolId].totalLiquidity,
@@ -225,14 +224,14 @@ contract ALM is BaseStrategyHook {
             amountIn = uint256(-amountSpecified);
 
             if (zeroForOne) {
-                (, amountOut, sqrtPriceNextX96) = CMathLib
+                (, amountOut, sqrtPriceNextX96) = ALMMathLib
                     .getSwapAmountsFromAmount0(
                         poolsInfo[poolId].sqrtPriceCurrent,
                         poolsInfo[poolId].totalLiquidity,
                         amountIn
                     );
             } else {
-                (amountOut, , sqrtPriceNextX96) = CMathLib
+                (amountOut, , sqrtPriceNextX96) = ALMMathLib
                     .getSwapAmountsFromAmount1(
                         poolsInfo[poolId].sqrtPriceCurrent,
                         poolsInfo[poolId].totalLiquidity,

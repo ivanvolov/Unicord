@@ -23,7 +23,7 @@ import {MorphoBalancesLib} from "@forks/morpho/libraries/MorphoBalancesLib.sol";
 import {MainDemoConsumerBase} from "@redstone-finance/data-services/MainDemoConsumerBase.sol";
 
 import {PRBMath} from "@src/libraries/math/PRBMath.sol";
-import {CMathLib} from "@src/libraries/CMathLib.sol";
+import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {Id} from "@forks/morpho/IMorpho.sol";
 
 abstract contract BaseStrategyHook is BaseHook, MainDemoConsumerBase, IALM {
@@ -98,7 +98,7 @@ abstract contract BaseStrategyHook is BaseHook, MainDemoConsumerBase, IALM {
         PoolId poolId
     ) public view override returns (int24) {
         return
-            CMathLib.getTickFromSqrtPrice(poolsInfo[poolId].sqrtPriceCurrent);
+            ALMMathLib.getTickFromSqrtPrice(poolsInfo[poolId].sqrtPriceCurrent);
     }
 
     // --- Morpho Wrappers ---
