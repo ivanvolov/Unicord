@@ -55,8 +55,6 @@ contract ALM is BaseStrategyHook, ERC721 {
         WETH.approve(address(morpho), type(uint256).max);
         USDC.approve(address(morpho), type(uint256).max);
 
-        setTickLast(key.toId(), tick);
-
         return ALM.afterInitialize.selector;
     }
 
@@ -74,8 +72,6 @@ contract ALM is BaseStrategyHook, ERC721 {
         PoolKey calldata key,
         uint256 amount0,
         uint256 amount1,
-        uint160 sqrtPriceUpperX96,
-        uint160 sqrtPriceLowerX96,
         address to
     ) external override returns (uint256 almId) {
         console.log(">> deposit");
@@ -87,6 +83,8 @@ contract ALM is BaseStrategyHook, ERC721 {
             amount0,
             amount1
         );
+
+        totalLiquidity += liquidity;
 
         (uint256 _amount0, uint256 _amount1) = CMathLib
             .getAmountsFromLiquiditySqrtPriceX96(
@@ -107,8 +105,7 @@ contract ALM is BaseStrategyHook, ERC721 {
 
         almInfo[almIdCounter] = ALMInfo({
             liquidity: liquidity,
-            sqrtPriceUpperX96: sqrtPriceUpperX96,
-            sqrtPriceLowerX96: sqrtPriceLowerX96,
+            sqrtPrice: sqrtPriceCurrent,
             amount0: _amount0,
             amount1: _amount1,
             owner: to
@@ -134,7 +131,8 @@ contract ALM is BaseStrategyHook, ERC721 {
             (
                 BeforeSwapDelta beforeSwapDelta,
                 uint256 wethOut,
-                uint256 usdcIn
+                uint256 usdcIn,
+                uint160 sqrtPriceNext
             ) = getZeroForOneDeltas(params.amountSpecified);
             console.log("> usdcIn", usdcIn);
             console.log("> wethOut", wethOut);
@@ -145,13 +143,15 @@ contract ALM is BaseStrategyHook, ERC721 {
             redeemIfNotEnough(address(WETH), wethOut, bUSDCmId);
             key.currency1.settle(poolManager, address(this), wethOut, false);
 
+            sqrtPriceCurrent = sqrtPriceNext;
             return (this.beforeSwap.selector, beforeSwapDelta, 0);
         } else {
             console.log("> WETH price go down...");
             (
                 BeforeSwapDelta beforeSwapDelta,
                 uint256 wethIn,
-                uint256 usdcOut
+                uint256 usdcOut,
+                uint160 sqrtPriceNext
             ) = getOneForZeroDeltas(params.amountSpecified);
             console.log("> usdcOut", usdcOut);
             console.log("> wethIn", wethIn);
@@ -161,8 +161,8 @@ contract ALM is BaseStrategyHook, ERC721 {
 
             redeemIfNotEnough(address(USDC), usdcOut, bWETHmId);
             key.currency0.settle(poolManager, address(this), usdcOut, false);
-            console.log("(5)");
 
+            sqrtPriceCurrent = sqrtPriceNext;
             return (this.beforeSwap.selector, beforeSwapDelta, 0);
         }
     }
@@ -175,19 +175,17 @@ contract ALM is BaseStrategyHook, ERC721 {
         returns (
             BeforeSwapDelta beforeSwapDelta,
             uint256 wethOut,
-            uint256 usdcIn
+            uint256 usdcIn,
+            uint160 sqrtPriceNextX96
         )
     {
-        // MOCK get from current and only tick, do loop in the future
-        uint128 liquidity = almInfo[0].liquidity;
-
         if (amountSpecified > 0) {
             console.log("> amount specified positive");
             wethOut = uint256(amountSpecified);
 
-            (usdcIn, ) = CMathLib.getSwapAmountsFromAmount1(
+            (usdcIn, , sqrtPriceNextX96) = CMathLib.getSwapAmountsFromAmount1(
                 sqrtPriceCurrent,
-                liquidity,
+                totalLiquidity,
                 wethOut
             );
 
@@ -200,9 +198,9 @@ contract ALM is BaseStrategyHook, ERC721 {
 
             usdcIn = uint256(-amountSpecified);
 
-            (, wethOut) = CMathLib.getSwapAmountsFromAmount0(
+            (, wethOut, sqrtPriceNextX96) = CMathLib.getSwapAmountsFromAmount0(
                 sqrtPriceCurrent,
-                liquidity,
+                totalLiquidity,
                 usdcIn
             );
 
@@ -221,20 +219,18 @@ contract ALM is BaseStrategyHook, ERC721 {
         returns (
             BeforeSwapDelta beforeSwapDelta,
             uint256 wethIn,
-            uint256 usdcOut
+            uint256 usdcOut,
+            uint160 sqrtPriceNextX96
         )
     {
-        // MOCK get from current and only tick, do loop in the future
-        uint128 liquidity = almInfo[0].liquidity;
-
         if (amountSpecified > 0) {
             console.log("> amount specified positive");
 
             usdcOut = uint256(amountSpecified);
 
-            (, wethIn) = CMathLib.getSwapAmountsFromAmount0(
+            (, wethIn, sqrtPriceNextX96) = CMathLib.getSwapAmountsFromAmount0(
                 sqrtPriceCurrent,
-                liquidity,
+                totalLiquidity,
                 usdcOut
             );
             beforeSwapDelta = toBeforeSwapDelta(
@@ -245,9 +241,9 @@ contract ALM is BaseStrategyHook, ERC721 {
             console.log("> amount specified negative");
             wethIn = uint256(-amountSpecified);
 
-            (usdcOut, ) = CMathLib.getSwapAmountsFromAmount1(
+            (usdcOut, , sqrtPriceNextX96) = CMathLib.getSwapAmountsFromAmount1(
                 sqrtPriceCurrent,
-                liquidity,
+                totalLiquidity,
                 wethIn
             );
 

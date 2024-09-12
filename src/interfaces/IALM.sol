@@ -17,8 +17,7 @@ interface IALM {
 
     struct ALMInfo {
         uint128 liquidity;
-        uint160 sqrtPriceUpperX96;
-        uint160 sqrtPriceLowerX96;
+        uint160 sqrtPrice;
         uint256 amount0;
         uint256 amount1;
         address owner;
@@ -46,4 +45,10 @@ interface IALM {
     function getCurrentTick(PoolId poolId) external view returns (int24);
 
     function setInitialPrise(uint160 initialSQRTPrice) external;
+
+    function lastWeightedPrice() external view returns (uint256);
+}
+
+interface IOracle {
+    function latestAnswer() external view returns (int256);
 }

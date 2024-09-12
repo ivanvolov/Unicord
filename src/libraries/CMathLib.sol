@@ -15,7 +15,7 @@ library CMathLib {
         uint160 sqrtPriceCurrentX96,
         uint128 liquidity,
         uint256 amount0
-    ) internal pure returns (uint256, uint256) {
+    ) internal pure returns (uint256, uint256, uint160) {
         uint160 sqrtPriceNextX96 = toUint160(
             uint256(liquidity).mul(uint256(sqrtPriceCurrentX96)).div(
                 uint256(liquidity) +
@@ -33,7 +33,8 @@ library CMathLib {
                 sqrtPriceNextX96,
                 sqrtPriceCurrentX96,
                 liquidity
-            )
+            ),
+            sqrtPriceNextX96
         );
     }
 
@@ -41,7 +42,7 @@ library CMathLib {
         uint160 sqrtPriceCurrentX96,
         uint128 liquidity,
         uint256 amount1
-    ) internal pure returns (uint256, uint256) {
+    ) internal pure returns (uint256, uint256, uint160) {
         uint160 sqrtPriceDeltaX96 = toUint160((amount1 * 2 ** 96) / liquidity);
         uint160 sqrtPriceNextX96 = sqrtPriceCurrentX96 + sqrtPriceDeltaX96;
 
@@ -55,7 +56,8 @@ library CMathLib {
                 sqrtPriceNextX96,
                 sqrtPriceCurrentX96,
                 liquidity
-            )
+            ),
+            sqrtPriceNextX96
         );
     }
 
@@ -124,6 +126,12 @@ library CMathLib {
         uint256 price
     ) internal pure returns (uint160) {
         return getSqrtPriceAtTick(CMathLib.getTickFromPrice(price));
+    }
+
+    function getTickFromSqrtPrice(
+        uint160 sqrtPriceX96
+    ) internal pure returns (int24) {
+        return TickMath.getTickAtSqrtPrice(sqrtPriceX96);
     }
 
     function getSqrtPriceAtTick(int24 tick) internal pure returns (uint160) {

@@ -18,11 +18,16 @@ import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 import {IERC20Minimal as IERC20} from "v4-core/interfaces/external/IERC20Minimal.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {IWETH} from "@forks/IWETH.sol";
-import {IMorpho, Id} from "@forks/morpho/IMorpho.sol";
-import {IALM} from "@src/interfaces/IALM.sol";
+import {IMorpho, Id, Position as MorphoPosition} from "@forks/morpho/IMorpho.sol";
+import {IALM, IOracle} from "@src/interfaces/IALM.sol";
 import {MorphoBalancesLib} from "@forks/morpho/libraries/MorphoBalancesLib.sol";
 
-abstract contract BaseStrategyHook is BaseHook, IALM {
+import {MainDemoConsumerBase} from "@redstone-finance/data-services/MainDemoConsumerBase.sol";
+
+import {PRBMath} from "@src/libraries/math/PRBMath.sol";
+import {CMathLib} from "@src/libraries/CMathLib.sol";
+
+abstract contract BaseStrategyHook is BaseHook, MainDemoConsumerBase, IALM {
     error NotHookDeployer();
     using CurrencySettler for Currency;
 
@@ -33,11 +38,19 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
     Id public immutable bUSDCmId;
 
     uint160 public sqrtPriceCurrent;
+    uint128 public totalLiquidity;
+
+    uint160 public sqrtPriceUpperX96;
+    uint160 public sqrtPriceLowerX96;
 
     function setInitialPrise(
-        uint160 initialSQRTPrice
+        uint160 initialSQRTPrice,
+        uint160 initialSQRTPriceUpper,
+        uint160 initialSQRTPriceLower
     ) external onlyHookDeployer {
         sqrtPriceCurrent = initialSQRTPrice;
+        sqrtPriceUpperX96 = initialSQRTPriceUpper;
+        sqrtPriceLowerX96 = initialSQRTPriceLower;
     }
 
     IMorpho public constant morpho =
@@ -46,36 +59,6 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
     bytes internal constant ZERO_BYTES = bytes("");
     address public immutable hookDeployer;
 
-    uint256 public priceScalingFactor = 2;
-    uint256 public cRatio = 2;
-    uint256 public weight = 2;
-    uint256 public performanceFee = 1e16;
-
-    function setPriceScalingFactor(
-        uint256 _priceScalingFactor
-    ) external onlyHookDeployer {
-        priceScalingFactor = _priceScalingFactor;
-    }
-
-    function setCRatio(uint256 _cRatio) external onlyHookDeployer {
-        cRatio = _cRatio;
-    }
-
-    function setWeight(uint256 _weight) external onlyHookDeployer {
-        weight = _weight;
-    }
-
-    function setPerformanceFee(
-        uint256 _performanceFee
-    ) external onlyHookDeployer {
-        performanceFee = _performanceFee;
-    }
-
-    function getUserFee() public view returns (uint256) {
-        return performanceFee;
-    }
-
-    mapping(PoolId => int24) lastTick;
     uint256 public almIdCounter = 0;
     mapping(uint256 => ALMInfo) almInfo;
 
@@ -83,14 +66,6 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
         uint256 almId
     ) external view override returns (ALMInfo memory) {
         return almInfo[almId];
-    }
-
-    function getTickLast(PoolId poolId) public view override returns (int24) {
-        return lastTick[poolId];
-    }
-
-    function setTickLast(PoolId poolId, int24 _tick) internal {
-        lastTick[poolId] = _tick;
     }
 
     constructor(IPoolManager _poolManager) BaseHook(_poolManager) {
@@ -125,8 +100,7 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
     function getCurrentTick(
         PoolId poolId
     ) public view override returns (int24) {
-        (, int24 currentTick, , ) = StateLibrary.getSlot0(poolManager, poolId);
-        return currentTick;
+        return CMathLib.getTickFromSqrtPrice(sqrtPriceCurrent);
     }
 
     //TODO: remove in production
@@ -139,35 +113,6 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
     }
 
     // --- Morpho Wrappers ---
-
-    function morphoBorrow(
-        Id morphoMarketId,
-        uint256 amount,
-        uint256 shares
-    ) internal {
-        morpho.borrow(
-            morpho.idToMarketParams(morphoMarketId),
-            amount,
-            shares,
-            address(this),
-            address(this)
-        );
-    }
-
-    function morphoReplay(
-        Id morphoMarketId,
-        uint256 amount,
-        uint256 shares
-    ) internal {
-        morpho.repay(
-            morpho.idToMarketParams(morphoMarketId),
-            amount,
-            shares,
-            address(this),
-            ZERO_BYTES
-        );
-    }
-
     function morphoWithdrawCollateral(
         Id morphoMarketId,
         uint256 amount
@@ -192,16 +137,12 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
         );
     }
 
-    function supplyAssets(
+    function suppliedCollateral(
         Id morphoMarketId,
         address owner
     ) internal view returns (uint256) {
-        return
-            MorphoBalancesLib.expectedSupplyAssets(
-                morpho,
-                morpho.idToMarketParams(morphoMarketId),
-                owner
-            );
+        MorphoPosition memory p = morpho.position(morphoMarketId, owner);
+        return p.collateral;
     }
 
     function morphoSync(Id morphoMarketId) internal {
