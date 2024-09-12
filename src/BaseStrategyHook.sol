@@ -17,7 +17,6 @@ import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 
 import {IERC20Minimal as IERC20} from "v4-core/interfaces/external/IERC20Minimal.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
-import {IWETH} from "@forks/IWETH.sol";
 import {IMorpho, Id, Position as MorphoPosition} from "@forks/morpho/IMorpho.sol";
 import {IALM} from "@src/interfaces/IALM.sol";
 import {MorphoBalancesLib} from "@forks/morpho/libraries/MorphoBalancesLib.sol";
@@ -31,11 +30,11 @@ abstract contract BaseStrategyHook is BaseHook, MainDemoConsumerBase, IALM {
     error NotHookDeployer();
     using CurrencySettler for Currency;
 
-    IWETH WETH = IWETH(ALMBaseLib.WETH);
+    IERC20 DAI = IERC20(ALMBaseLib.DAI);
     IERC20 USDC = IERC20(ALMBaseLib.USDC);
 
-    Id public immutable bWETHmId;
-    Id public immutable bUSDCmId;
+    Id public immutable dDAImId;
+    Id public immutable dUSDCmId;
 
     uint160 public sqrtPriceCurrent;
     uint128 public totalLiquidity;
@@ -108,8 +107,8 @@ abstract contract BaseStrategyHook is BaseHook, MainDemoConsumerBase, IALM {
         console.log("> hook balances");
         if (USDC.balanceOf(address(this)) > 0)
             console.log("USDC  ", USDC.balanceOf(address(this)));
-        if (WETH.balanceOf(address(this)) > 0)
-            console.log("WETH  ", WETH.balanceOf(address(this)));
+        if (DAI.balanceOf(address(this)) > 0)
+            console.log("DAI  ", DAI.balanceOf(address(this)));
     }
 
     // --- Morpho Wrappers ---

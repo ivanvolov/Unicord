@@ -27,7 +27,7 @@ abstract contract ALMTestBase is Test, Deployers {
     IALM hook;
 
     TestERC20 USDC;
-    TestERC20 WETH;
+    TestERC20 DAI;
 
     TestAccount marketCreator;
     TestAccount morphoLpProvider;
@@ -35,14 +35,14 @@ abstract contract ALMTestBase is Test, Deployers {
     TestAccount swapper;
 
     HookEnabledSwapRouter router;
-    Id bWETHmId;
-    Id bUSDCmId;
+    Id dDAImId;
+    Id dUSDCmId;
     IMorpho morpho = IMorpho(0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb);
     uint256 almId;
 
     function labelTokens() public {
-        WETH = TestERC20(ALMBaseLib.WETH);
-        vm.label(address(WETH), "WETH");
+        DAI = TestERC20(ALMBaseLib.DAI);
+        vm.label(address(DAI), "DAI");
         USDC = TestERC20(ALMBaseLib.USDC);
         vm.label(address(USDC), "USDC");
         marketCreator = TestAccountLib.createTestAccount("marketCreator");
@@ -55,44 +55,40 @@ abstract contract ALMTestBase is Test, Deployers {
 
         vm.startPrank(alice.addr);
         USDC.approve(address(hook), type(uint256).max);
-        WETH.approve(address(hook), type(uint256).max);
+        DAI.approve(address(hook), type(uint256).max);
 
         USDC.approve(address(morpho), type(uint256).max);
-        WETH.approve(address(morpho), type(uint256).max);
+        DAI.approve(address(morpho), type(uint256).max);
         vm.stopPrank();
 
         vm.startPrank(swapper.addr);
         USDC.approve(address(router), type(uint256).max);
-        WETH.approve(address(router), type(uint256).max);
+        DAI.approve(address(router), type(uint256).max);
         USDC.approve(address(swapRouter), type(uint256).max);
-        WETH.approve(address(swapRouter), type(uint256).max);
+        DAI.approve(address(swapRouter), type(uint256).max);
         vm.stopPrank();
     }
 
     // -- Uniswap V4 -- //
 
-    function swapWETH_USDC_Out(
-        uint256 amount
-    ) public returns (uint256, uint256) {
-        return swap(false, int256(amount));
-    }
-
-    function swapWETH_USDC_In(
-        uint256 amount
-    ) public returns (uint256, uint256) {
-        return swap(false, -int256(amount));
-    }
-
-    function swapUSDC_WETH_Out(
+    function swapDAI_USDC_Out(
         uint256 amount
     ) public returns (uint256, uint256) {
         return swap(true, int256(amount));
     }
 
-    function swapUSDC_WETH_In(
+    function swapDAI_USDC_In(uint256 amount) public returns (uint256, uint256) {
+        return swap(true, -int256(amount));
+    }
+
+    function swapUSDC_DAI_Out(
         uint256 amount
     ) public returns (uint256, uint256) {
-        return swap(true, -int256(amount));
+        return swap(false, int256(amount));
+    }
+
+    function swapUSDC_DAI_In(uint256 amount) public returns (uint256, uint256) {
+        return swap(false, -int256(amount));
     }
 
     function swap(
@@ -119,15 +115,6 @@ abstract contract ALMTestBase is Test, Deployers {
             uint256(int256(delta.amount0())),
             uint256(int256(delta.amount1()))
         );
-    }
-
-    // -- Uniswap V3 -- //
-
-    function getETH_USDCPriceV3() public view returns (uint256) {
-        return
-            ALMBaseLib.getV3PoolPrice(
-                0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640
-            );
     }
 
     // -- Morpho -- //
@@ -273,23 +260,23 @@ abstract contract ALMTestBase is Test, Deployers {
 
     function assertEqBalanceState(
         address owner,
-        uint256 _balanceWETH,
+        uint256 _balanceDAI,
         uint256 _balanceUSDC
     ) public view {
-        assertEqBalanceState(owner, _balanceWETH, _balanceUSDC, 0);
+        assertEqBalanceState(owner, _balanceDAI, _balanceUSDC, 0);
     }
 
     function assertEqBalanceState(
         address owner,
-        uint256 _balanceWETH,
+        uint256 _balanceDAI,
         uint256 _balanceUSDC,
         uint256 _balanceETH
     ) public view {
         assertApproxEqAbs(
-            WETH.balanceOf(owner),
-            _balanceWETH,
+            DAI.balanceOf(owner),
+            _balanceDAI,
             10,
-            "Balance WETH not equal"
+            "Balance DAI not equal"
         );
         assertApproxEqAbs(
             USDC.balanceOf(owner),

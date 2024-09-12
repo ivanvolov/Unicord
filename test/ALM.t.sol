@@ -24,7 +24,7 @@ contract ALMTest is ALMTestBase {
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
         vm.selectFork(mainnetFork);
-        vm.rollFork(19_955_703);
+        vm.rollFork(20_734_421);
 
         deployFreshManagerAndRouters();
 
@@ -34,73 +34,83 @@ contract ALMTest is ALMTestBase {
         create_and_approve_accounts();
     }
 
-    function test_morpho_blue_markets() public {
-        vm.startPrank(alice.addr);
-
-        // ** Supply collateral
-        deal(address(WETH), address(alice.addr), 1 ether);
-        morpho.supplyCollateral(
-            morpho.idToMarketParams(bUSDCmId),
-            1 ether,
-            alice.addr,
-            ""
-        );
-
-        assertEqMorphoState(bUSDCmId, alice.addr, 0, 0, 1 ether);
-        assertEqBalanceStateZero(alice.addr);
-
-        // ** Borrow
-        uint256 borrowUSDC = 4000 * 1e6;
-        (, uint256 shares) = morpho.borrow(
-            morpho.idToMarketParams(bUSDCmId),
-            borrowUSDC,
-            0,
-            alice.addr,
-            alice.addr
-        );
-
-        assertEqMorphoState(bUSDCmId, alice.addr, 0, shares, 1 ether);
-        assertEqBalanceState(alice.addr, 0, borrowUSDC);
-        vm.stopPrank();
-    }
-
-    uint256 amountToDep0 = 4486999999;
-    uint256 amountToDep1 = 943787075944092628;
+    uint256 amountToDep0 = 999999999999999994151; //DAI
+    uint256 amountToDep1 = 1045259706; //USDC
 
     function test_deposit() public {
-        // deal(address(WETH), address(alice.addr), amountToDep1);
-        // deal(address(USDC), address(alice.addr), amountToDep0);
-        // vm.prank(alice.addr);
-        // almId = hook.deposit(key, 4487 * 1e6, 1 ether, alice.addr);
-        // assertEq(almId, 0);
-        // assertEqBalanceStateZero(alice.addr);
-        // assertEqBalanceStateZero(address(hook));
-        // assertEqMorphoA(bUSDCmId, address(hook), 0, 0, amountToDep1);
-        // assertEqMorphoA(bWETHmId, address(hook), 0, 0, amountToDep0);
+        deal(address(DAI), address(alice.addr), amountToDep0);
+        deal(address(USDC), address(alice.addr), amountToDep1);
+        vm.prank(alice.addr);
+        almId = hook.deposit(key, 1000 ether, 1000 * 1e18, alice.addr);
+        assertEq(almId, 0);
+
+        assertEqBalanceStateZero(alice.addr);
+        assertEqBalanceStateZero(address(hook));
+
+        assertEqMorphoA(dDAImId, address(hook), 0, 0, amountToDep0);
+        assertEqMorphoA(dUSDCmId, address(hook), 0, 0, amountToDep1);
     }
 
-    // function test_swap_price_up() public {
-    //     uint256 usdcToSwap = 1000 * 1e6;
-    //     test_deposit();
+    function test_swap_price_up_in() public {
+        uint256 usdcToSwap = 1000 * 1e6;
+        test_deposit();
 
-    //     deal(address(USDC), address(swapper.addr), usdcToSwap);
-    //     assertEqBalanceState(swapper.addr, 0, usdcToSwap);
+        deal(address(USDC), address(swapper.addr), usdcToSwap);
+        assertEqBalanceState(swapper.addr, 0, usdcToSwap);
 
-    //     (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
-    //     assertApproxEqAbs(deltaWETH, 220127287199035367, 1e1);
+        (uint256 deltaDAI, ) = swapUSDC_DAI_In(usdcToSwap);
+        assertApproxEqAbs(deltaDAI, 998866253455794652571, 1e1);
 
-    //     assertEqBalanceState(swapper.addr, deltaWETH, 0);
-    //     assertEqBalanceState(address(hook), 0, 0);
-    // }
+        assertEqBalanceState(swapper.addr, deltaDAI, 0);
+        assertEqBalanceState(address(hook), 0, 0);
+
+        assertEqMorphoA(dDAImId, address(hook), 0, 0, amountToDep0 - deltaDAI);
+        assertEqMorphoA(
+            dUSDCmId,
+            address(hook),
+            0,
+            0,
+            amountToDep1 + usdcToSwap
+        );
+    }
+
+    function test_swap_price_up_out() public {
+        uint256 usdcToSwapQ = 99952317;
+        uint256 daiToGetFSwap = 100 ether;
+        test_deposit();
+
+        deal(address(USDC), address(swapper.addr), usdcToSwapQ);
+        assertEqBalanceState(swapper.addr, 0, usdcToSwapQ);
+
+        swapUSDC_DAI_Out(daiToGetFSwap);
+
+        assertEqBalanceState(swapper.addr, daiToGetFSwap, 0);
+        assertEqBalanceState(address(hook), 0, 0);
+
+        assertEqMorphoA(
+            dDAImId,
+            address(hook),
+            0,
+            0,
+            amountToDep0 - daiToGetFSwap
+        );
+        assertEqMorphoA(
+            dUSDCmId,
+            address(hook),
+            0,
+            0,
+            amountToDep1 + usdcToSwapQ
+        );
+    }
 
     // function test_swap_price_down() public {
-    //     uint256 wethToSwap = 1 ether / 5;
+    //     uint256 daiToSwap = 1 ether / 5;
     //     test_deposit();
 
-    //     deal(address(WETH), address(swapper.addr), wethToSwap);
-    //     assertEqBalanceState(swapper.addr, wethToSwap, 0);
+    //     deal(address(DAI), address(swapper.addr), daiToSwap);
+    //     assertEqBalanceState(swapper.addr, daiToSwap, 0);
 
-    //     (uint256 deltaUSDC, ) = swapWETH_USDC_In(wethToSwap);
+    //     (uint256 deltaUSDC, ) = swapDAI_USDC_In(daiToSwap);
     //     assertEq(deltaUSDC, 887490956);
 
     //     assertEqBalanceState(swapper.addr, 0, deltaUSDC);
@@ -122,18 +132,18 @@ contract ALMTest is ALMTestBase {
         );
         deployCodeTo(
             "ALM.sol",
-            abi.encode(manager, bWETHmId, bUSDCmId),
+            abi.encode(manager, dDAImId, dUSDCmId),
             hookAddress
         );
         ALM _hook = ALM(hookAddress);
 
-        uint160 initialSQRTPrice = 1182773400228691521900860642689024; // 4487 usdc for eth (but in reversed tokens order). Tick: 192228
+        uint160 initialSQRTPrice = 79215074834764545259897; // Tick: -276328
 
         (key, ) = initPool(
-            Currency.wrap(address(USDC)), //TODO: this sqrt price could be fck, recalculate it
-            Currency.wrap(address(WETH)),
+            Currency.wrap(address(DAI)),
+            Currency.wrap(address(USDC)),
             _hook,
-            200,
+            500,
             initialSQRTPrice,
             ZERO_BYTES
         );
@@ -143,37 +153,34 @@ contract ALMTest is ALMTestBase {
         int24 deltaTick = 30;
         hook.setInitialPrise(
             initialSQRTPrice,
-            192228 - deltaTick,
-            192228 + deltaTick
+            -276328 - deltaTick,
+            -276328 + deltaTick
         );
 
         // This is needed in order to simulate proper accounting
-        deal(address(USDC), address(manager), 1000 ether);
-        deal(address(WETH), address(manager), 1000 ether);
+        deal(address(USDC), address(manager), 10000 * 1e6);
+        deal(address(DAI), address(manager), 10000 ether);
     }
 
     function create_and_seed_morpho_markets() internal {
         address oracle = 0x48F7E36EB6B826B2dF4B2E630B62Cd25e89E40e2;
 
-        modifyMockOracle(oracle, 4487851340816804029821232973); //4487 usdc for eth
+        modifyMockOracle(oracle, 1851340816804029821232973); //1 usdc for dai
 
-        bUSDCmId = create_morpho_market(
+        dDAImId = create_morpho_market(
             address(USDC),
-            address(WETH),
+            address(DAI),
             915000000000000000,
             oracle
         );
 
-        // Providing some ETH
-        provideLiquidityToMorpho(bUSDCmId, 1000 ether);
-
-        bWETHmId = create_morpho_market(
-            address(WETH),
+        dUSDCmId = create_morpho_market(
+            address(DAI),
             address(USDC),
             915000000000000000,
             oracle
         );
 
-        // We won't provide WETH cause we will not borrow it from HERE. This market is only for interest mining.
+        // We won't provide liquidity cause we will not borrow it from HERE. This market is only for interest mining.
     }
 }
