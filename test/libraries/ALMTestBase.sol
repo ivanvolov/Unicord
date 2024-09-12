@@ -6,7 +6,6 @@ import "forge-std/console.sol";
 
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {MarketParamsLib} from "@forks/morpho/libraries/MarketParamsLib.sol";
-import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
 
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {IChainlinkOracle} from "@forks/morpho-oracles/IChainlinkOracle.sol";
@@ -39,9 +38,9 @@ abstract contract ALMTestBase is Test, Deployers {
     uint256 almId;
 
     function labelTokens() public {
-        DAI = TestERC20(ALMBaseLib.DAI);
+        DAI = TestERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);
         vm.label(address(DAI), "DAI");
-        USDC = TestERC20(ALMBaseLib.USDC);
+        USDC = TestERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
         vm.label(address(USDC), "USDC");
         marketCreator = TestAccountLib.createTestAccount("marketCreator");
         morphoLpProvider = TestAccountLib.createTestAccount("morphoLpProvider");

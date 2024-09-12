@@ -6,7 +6,6 @@ import "forge-std/console.sol";
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {CurrencySettler} from "@uniswap/v4-core/test/utils/CurrencySettler.sol";
 import {StateLibrary} from "v4-core/libraries/StateLibrary.sol";
-import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
 
 import {Position} from "v4-core/libraries/Position.sol";
 import {Currency} from "v4-core/types/Currency.sol";
@@ -25,31 +24,32 @@ import {MainDemoConsumerBase} from "@redstone-finance/data-services/MainDemoCons
 
 import {PRBMath} from "@src/libraries/math/PRBMath.sol";
 import {CMathLib} from "@src/libraries/CMathLib.sol";
+import {Id} from "@forks/morpho/IMorpho.sol";
 
 abstract contract BaseStrategyHook is BaseHook, MainDemoConsumerBase, IALM {
-    error NotHookDeployer();
     using CurrencySettler for Currency;
+    using PoolIdLibrary for PoolKey;
 
-    IERC20 DAI = IERC20(ALMBaseLib.DAI);
-    IERC20 USDC = IERC20(ALMBaseLib.USDC);
-
-    Id public immutable dDAImId;
-    Id public immutable dUSDCmId;
-
-    uint160 public sqrtPriceCurrent;
-    uint128 public totalLiquidity;
-
-    int24 public tickUpper;
-    int24 public tickLower;
+    mapping(PoolId => PoolInfo) poolsInfo;
+    mapping(PoolId => mapping(uint256 => PlacedPositionInfo)) placedPositionsInfo;
 
     function setInitialPrise(
+        PoolKey calldata key,
         uint160 initialSQRTPrice,
-        int24 _tickUpper,
-        int24 _tickLower
+        int24 tickUpper,
+        int24 tickLower,
+        Id dToken0MId,
+        Id dToken1MId
     ) external onlyHookDeployer {
-        sqrtPriceCurrent = initialSQRTPrice;
-        tickUpper = _tickUpper;
-        tickLower = _tickLower;
+        poolsInfo[key.toId()] = PoolInfo({
+            dToken0MId: dToken0MId,
+            dToken1MId: dToken1MId,
+            sqrtPriceCurrent: initialSQRTPrice,
+            totalLiquidity: 0,
+            tickUpper: tickUpper,
+            tickLower: tickLower,
+            positionIdCounter: 0
+        });
     }
 
     IMorpho public constant morpho =
@@ -58,13 +58,11 @@ abstract contract BaseStrategyHook is BaseHook, MainDemoConsumerBase, IALM {
     bytes internal constant ZERO_BYTES = bytes("");
     address public immutable hookDeployer;
 
-    uint256 public almIdCounter = 0;
-    mapping(uint256 => ALMInfo) almInfo;
-
-    function getALMInfo(
+    function getPlacedPositionInfo(
+        PoolId poolId,
         uint256 almId
-    ) external view override returns (ALMInfo memory) {
-        return almInfo[almId];
+    ) external view override returns (PlacedPositionInfo memory) {
+        return placedPositionsInfo[poolId][almId];
     }
 
     constructor(IPoolManager _poolManager) BaseHook(_poolManager) {
@@ -99,7 +97,8 @@ abstract contract BaseStrategyHook is BaseHook, MainDemoConsumerBase, IALM {
     function getCurrentTick(
         PoolId poolId
     ) public view override returns (int24) {
-        return CMathLib.getTickFromSqrtPrice(sqrtPriceCurrent);
+        return
+            CMathLib.getTickFromSqrtPrice(poolsInfo[poolId].sqrtPriceCurrent);
     }
 
     // --- Morpho Wrappers ---

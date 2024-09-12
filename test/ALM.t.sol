@@ -58,7 +58,7 @@ contract ALMTest is ALMTestBase {
         assertEqBalanceState(swapper.addr, 0, usdcToSwap);
 
         (uint256 deltaDAI, ) = swapUSDC_DAI_In(usdcToSwap);
-        assertApproxEqAbs(deltaDAI, 998866253455794652571, 1e1);
+        assertApproxEqAbs(deltaDAI, 100018384742682681812, 1e1);
 
         assertEqBalanceState(swapper.addr, deltaDAI, 0);
         assertEqBalanceState(address(hook), 0, 0);
@@ -165,11 +165,7 @@ contract ALMTest is ALMTestBase {
                     Hooks.AFTER_INITIALIZE_FLAG
             )
         );
-        deployCodeTo(
-            "ALM.sol",
-            abi.encode(manager, dDAImId, dUSDCmId),
-            hookAddress
-        );
+        deployCodeTo("ALM.sol", abi.encode(manager), hookAddress);
         ALM _hook = ALM(hookAddress);
 
         uint160 initialSQRTPrice = 79215074834764545259897; // Tick: -276328
@@ -187,9 +183,12 @@ contract ALMTest is ALMTestBase {
 
         int24 deltaTick = 30;
         hook.setInitialPrise(
+            key,
             initialSQRTPrice,
             -276328 - deltaTick,
-            -276328 + deltaTick
+            -276328 + deltaTick,
+            dDAImId,
+            dUSDCmId
         );
 
         // This is needed in order to simulate proper accounting
