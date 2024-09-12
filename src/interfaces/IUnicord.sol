@@ -5,7 +5,7 @@ import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId} from "v4-core/types/PoolId.sol";
 import {Id} from "@forks/morpho/IMorpho.sol";
 
-interface IALM {
+interface IUnicord {
     error ZeroLiquidity();
     error AddLiquidityThroughHook();
     error NotHookDeployer();
@@ -33,7 +33,7 @@ interface IALM {
         uint256 amount0,
         uint256 amount1,
         address to
-    ) external returns (uint256 almId);
+    ) external returns (uint256 unicordId);
 
     function setInitialPrise(
         PoolKey calldata key,
@@ -48,6 +48,6 @@ interface IALM {
 
     function getPlacedPositionInfo(
         PoolId poolId,
-        uint256 almId
+        uint256 unicordId
     ) external view returns (PlacedPositionInfo memory);
 }

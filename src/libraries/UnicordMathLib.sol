@@ -7,7 +7,7 @@ import {FixedPointMathLib} from "@src/libraries/math/FixedPointMathLib.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
 
-library ALMMathLib {
+library UnicordMathLib {
     using FixedPointMathLib for uint256;
 
     function getSwapAmountsFromAmount0(

@@ -6,15 +6,15 @@ import "forge-std/console.sol";
 
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
-import {ALMTestBase} from "@test/libraries/ALMTestBase.sol";
+import {UnicordTestBase} from "@test/libraries/UnicordTestBase.sol";
 import {ErrorsLib} from "@forks/morpho/libraries/ErrorsLib.sol";
 
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
-import {ALM} from "@src/ALM.sol";
-import {IALM} from "@src/interfaces/IALM.sol";
+import {Unicord} from "@src/Unicord.sol";
+import {IUnicord} from "@src/interfaces/IUnicord.sol";
 
-contract ALMTest is ALMTestBase {
+contract UnicordTest is UnicordTestBase {
     using PoolIdLibrary for PoolId;
     using CurrencyLibrary for Currency;
 
@@ -40,8 +40,8 @@ contract ALMTest is ALMTestBase {
         deal(address(DAI), address(alice.addr), amountToDep0);
         deal(address(USDC), address(alice.addr), amountToDep1);
         vm.prank(alice.addr);
-        almId = hook.deposit(key, 1000 ether, 1000 * 1e18, alice.addr);
-        assertEq(almId, 0);
+        unicordId = hook.deposit(key, 1000 ether, 1000 * 1e18, alice.addr);
+        assertEq(unicordId, 0);
 
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
@@ -165,8 +165,8 @@ contract ALMTest is ALMTestBase {
                     Hooks.AFTER_INITIALIZE_FLAG
             )
         );
-        deployCodeTo("ALM.sol", abi.encode(manager), hookAddress);
-        ALM _hook = ALM(hookAddress);
+        deployCodeTo("Unicord.sol", abi.encode(manager), hookAddress);
+        Unicord _hook = Unicord(hookAddress);
 
         uint160 initialSQRTPrice = 79215074834764545259897; // Tick: -276328
 
@@ -179,7 +179,7 @@ contract ALMTest is ALMTestBase {
             ZERO_BYTES
         );
 
-        hook = IALM(hookAddress);
+        hook = IUnicord(hookAddress);
 
         int24 deltaTick = 30;
         hook.setInitialPrise(

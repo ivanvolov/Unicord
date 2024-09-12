@@ -18,12 +18,12 @@ import {BaseStrategyHook} from "@src/BaseStrategyHook.sol";
 
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {Position as MorphoPosition, Id, Market} from "@forks/morpho/IMorpho.sol";
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
+import {UnicordMathLib} from "@src/libraries/UnicordMathLib.sol";
 
-/// @title ALM
+/// @title Unicord
 /// @author IVikkk
 /// @custom:contact vivan.volovik@gmail.com
-contract ALM is BaseStrategyHook {
+contract Unicord is BaseStrategyHook {
     using PoolIdLibrary for PoolKey;
     using CurrencySettler for Currency;
 
@@ -45,7 +45,7 @@ contract ALM is BaseStrategyHook {
             type(uint256).max
         );
 
-        return ALM.afterInitialize.selector;
+        return Unicord.afterInitialize.selector;
     }
 
     /// @notice  Disable adding liquidity through the PM
@@ -66,21 +66,25 @@ contract ALM is BaseStrategyHook {
     ) external override returns (uint256) {
         console.log(">> deposit");
 
-        uint128 liquidity = ALMMathLib.getLiquidityFromAmountsSqrtPriceX96(
+        uint128 liquidity = UnicordMathLib.getLiquidityFromAmountsSqrtPriceX96(
             poolsInfo[key.toId()].sqrtPriceCurrent,
-            ALMMathLib.getSqrtPriceAtTick(poolsInfo[key.toId()].tickUpper),
-            ALMMathLib.getSqrtPriceAtTick(poolsInfo[key.toId()].tickLower),
+            UnicordMathLib.getSqrtPriceAtTick(poolsInfo[key.toId()].tickUpper),
+            UnicordMathLib.getSqrtPriceAtTick(poolsInfo[key.toId()].tickLower),
             amount0,
             amount1
         );
 
         poolsInfo[key.toId()].totalLiquidity += liquidity;
 
-        (uint256 _amount0, uint256 _amount1) = ALMMathLib
+        (uint256 _amount0, uint256 _amount1) = UnicordMathLib
             .getAmountsFromLiquiditySqrtPriceX96(
                 poolsInfo[key.toId()].sqrtPriceCurrent,
-                ALMMathLib.getSqrtPriceAtTick(poolsInfo[key.toId()].tickUpper),
-                ALMMathLib.getSqrtPriceAtTick(poolsInfo[key.toId()].tickLower),
+                UnicordMathLib.getSqrtPriceAtTick(
+                    poolsInfo[key.toId()].tickUpper
+                ),
+                UnicordMathLib.getSqrtPriceAtTick(
+                    poolsInfo[key.toId()].tickLower
+                ),
                 liquidity
             );
 
@@ -200,14 +204,14 @@ contract ALM is BaseStrategyHook {
             amountOut = uint256(amountSpecified);
 
             if (zeroForOne) {
-                (amountIn, , sqrtPriceNextX96) = ALMMathLib
+                (amountIn, , sqrtPriceNextX96) = UnicordMathLib
                     .getSwapAmountsFromAmount1(
                         poolsInfo[poolId].sqrtPriceCurrent,
                         poolsInfo[poolId].totalLiquidity,
                         amountOut
                     );
             } else {
-                (, amountIn, sqrtPriceNextX96) = ALMMathLib
+                (, amountIn, sqrtPriceNextX96) = UnicordMathLib
                     .getSwapAmountsFromAmount0(
                         poolsInfo[poolId].sqrtPriceCurrent,
                         poolsInfo[poolId].totalLiquidity,
@@ -224,14 +228,14 @@ contract ALM is BaseStrategyHook {
             amountIn = uint256(-amountSpecified);
 
             if (zeroForOne) {
-                (, amountOut, sqrtPriceNextX96) = ALMMathLib
+                (, amountOut, sqrtPriceNextX96) = UnicordMathLib
                     .getSwapAmountsFromAmount0(
                         poolsInfo[poolId].sqrtPriceCurrent,
                         poolsInfo[poolId].totalLiquidity,
                         amountIn
                     );
             } else {
-                (amountOut, , sqrtPriceNextX96) = ALMMathLib
+                (amountOut, , sqrtPriceNextX96) = UnicordMathLib
                     .getSwapAmountsFromAmount1(
                         poolsInfo[poolId].sqrtPriceCurrent,
                         poolsInfo[poolId].totalLiquidity,

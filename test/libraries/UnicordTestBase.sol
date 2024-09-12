@@ -10,7 +10,7 @@ import {MarketParamsLib} from "@forks/morpho/libraries/MarketParamsLib.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {IChainlinkOracle} from "@forks/morpho-oracles/IChainlinkOracle.sol";
 import {IMorpho, MarketParams, Position as MorphoPosition, Id} from "@forks/morpho/IMorpho.sol";
-import {IALM} from "@src/interfaces/IALM.sol";
+import {IUnicord} from "@src/interfaces/IUnicord.sol";
 import {PoolSwapTest} from "v4-core/test/PoolSwapTest.sol";
 import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
 
@@ -19,10 +19,10 @@ import {Deployers} from "@uniswap/v4-core/test/utils/Deployers.sol";
 import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol";
 import {MorphoBalancesLib} from "@forks/morpho/libraries/MorphoBalancesLib.sol";
 
-abstract contract ALMTestBase is Test, Deployers {
+abstract contract UnicordTestBase is Test, Deployers {
     using TestAccountLib for TestAccount;
 
-    IALM hook;
+    IUnicord hook;
 
     TestERC20 USDC;
     TestERC20 DAI;
@@ -35,7 +35,7 @@ abstract contract ALMTestBase is Test, Deployers {
     Id dDAImId;
     Id dUSDCmId;
     IMorpho morpho = IMorpho(0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb);
-    uint256 almId;
+    uint256 unicordId;
 
     function labelTokens() public {
         DAI = TestERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);

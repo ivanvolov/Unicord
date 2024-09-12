@@ -17,16 +17,16 @@ import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 import {IERC20Minimal as IERC20} from "v4-core/interfaces/external/IERC20Minimal.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {IMorpho, Id, Position as MorphoPosition} from "@forks/morpho/IMorpho.sol";
-import {IALM} from "@src/interfaces/IALM.sol";
+import {IUnicord} from "@src/interfaces/IUnicord.sol";
 import {MorphoBalancesLib} from "@forks/morpho/libraries/MorphoBalancesLib.sol";
 
 import {MainDemoConsumerBase} from "@redstone-finance/data-services/MainDemoConsumerBase.sol";
 
 import {PRBMath} from "@src/libraries/math/PRBMath.sol";
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
+import {UnicordMathLib} from "@src/libraries/UnicordMathLib.sol";
 import {Id} from "@forks/morpho/IMorpho.sol";
 
-abstract contract BaseStrategyHook is BaseHook, MainDemoConsumerBase, IALM {
+abstract contract BaseStrategyHook is BaseHook, MainDemoConsumerBase, IUnicord {
     using CurrencySettler for Currency;
     using PoolIdLibrary for PoolKey;
 
@@ -60,9 +60,9 @@ abstract contract BaseStrategyHook is BaseHook, MainDemoConsumerBase, IALM {
 
     function getPlacedPositionInfo(
         PoolId poolId,
-        uint256 almId
+        uint256 unicordId
     ) external view override returns (PlacedPositionInfo memory) {
-        return placedPositionsInfo[poolId][almId];
+        return placedPositionsInfo[poolId][unicordId];
     }
 
     constructor(IPoolManager _poolManager) BaseHook(_poolManager) {
@@ -98,7 +98,9 @@ abstract contract BaseStrategyHook is BaseHook, MainDemoConsumerBase, IALM {
         PoolId poolId
     ) public view override returns (int24) {
         return
-            ALMMathLib.getTickFromSqrtPrice(poolsInfo[poolId].sqrtPriceCurrent);
+            UnicordMathLib.getTickFromSqrtPrice(
+                poolsInfo[poolId].sqrtPriceCurrent
+            );
     }
 
     // --- Morpho Wrappers ---
