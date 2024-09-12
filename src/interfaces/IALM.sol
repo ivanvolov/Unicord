@@ -23,32 +23,20 @@ interface IALM {
         address owner;
     }
 
-    function getALMInfo(uint256 almId) external view returns (ALMInfo memory);
-
-    function priceScalingFactor() external view returns (uint256);
-
-    function cRatio() external view returns (uint256);
-
-    function weight() external view returns (uint256);
-
-    function getTickLast(PoolId poolId) external view returns (int24);
-
     function deposit(
         PoolKey calldata key,
         uint256 amount0,
         uint256 amount1,
-        uint160 sqrtPriceUpperX96,
-        uint160 sqrtPriceLowerX96,
         address to
     ) external returns (uint256 almId);
 
+    function setInitialPrise(
+        uint160 initialSQRTPrice,
+        int24 _tickUpper,
+        int24 _tickLower
+    ) external;
+
     function getCurrentTick(PoolId poolId) external view returns (int24);
 
-    function setInitialPrise(uint160 initialSQRTPrice) external;
-
-    function lastWeightedPrice() external view returns (uint256);
-}
-
-interface IOracle {
-    function latestAnswer() external view returns (int256);
+    function getALMInfo(uint256 almId) external view returns (ALMInfo memory);
 }

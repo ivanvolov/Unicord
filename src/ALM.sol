@@ -78,8 +78,8 @@ contract ALM is BaseStrategyHook, ERC721 {
 
         uint128 liquidity = CMathLib.getLiquidityFromAmountsSqrtPriceX96(
             sqrtPriceCurrent,
-            sqrtPriceUpperX96,
-            sqrtPriceLowerX96,
+            CMathLib.getSqrtPriceAtTick(tickUpper),
+            CMathLib.getSqrtPriceAtTick(tickLower),
             amount0,
             amount1
         );
@@ -89,8 +89,8 @@ contract ALM is BaseStrategyHook, ERC721 {
         (uint256 _amount0, uint256 _amount1) = CMathLib
             .getAmountsFromLiquiditySqrtPriceX96(
                 sqrtPriceCurrent,
-                sqrtPriceUpperX96,
-                sqrtPriceLowerX96,
+                CMathLib.getSqrtPriceAtTick(tickUpper),
+                CMathLib.getSqrtPriceAtTick(tickLower),
                 liquidity
             );
 

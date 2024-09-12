@@ -13,7 +13,7 @@ import {ErrorsLib} from "@forks/morpho/libraries/ErrorsLib.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 import {ALM} from "@src/ALM.sol";
-import {IALM, IOracle} from "@src/interfaces/IALM.sol";
+import {IALM} from "@src/interfaces/IALM.sol";
 
 contract ALMTest is ALMTestBase {
     using PoolIdLibrary for PoolId;
@@ -140,7 +140,7 @@ contract ALMTest is ALMTestBase {
 
         hook = IALM(hookAddress);
 
-        int24 deltaTick = 3000;
+        int24 deltaTick = 30;
         hook.setInitialPrise(
             initialSQRTPrice,
             192228 - deltaTick,

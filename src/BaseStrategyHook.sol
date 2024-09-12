@@ -19,7 +19,7 @@ import {IERC20Minimal as IERC20} from "v4-core/interfaces/external/IERC20Minimal
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {IWETH} from "@forks/IWETH.sol";
 import {IMorpho, Id, Position as MorphoPosition} from "@forks/morpho/IMorpho.sol";
-import {IALM, IOracle} from "@src/interfaces/IALM.sol";
+import {IALM} from "@src/interfaces/IALM.sol";
 import {MorphoBalancesLib} from "@forks/morpho/libraries/MorphoBalancesLib.sol";
 
 import {MainDemoConsumerBase} from "@redstone-finance/data-services/MainDemoConsumerBase.sol";
@@ -40,17 +40,17 @@ abstract contract BaseStrategyHook is BaseHook, MainDemoConsumerBase, IALM {
     uint160 public sqrtPriceCurrent;
     uint128 public totalLiquidity;
 
-    uint160 public sqrtPriceUpperX96;
-    uint160 public sqrtPriceLowerX96;
+    int24 public tickUpper;
+    int24 public tickLower;
 
     function setInitialPrise(
         uint160 initialSQRTPrice,
-        uint160 initialSQRTPriceUpper,
-        uint160 initialSQRTPriceLower
+        int24 _tickUpper,
+        int24 _tickLower
     ) external onlyHookDeployer {
         sqrtPriceCurrent = initialSQRTPrice;
-        sqrtPriceUpperX96 = initialSQRTPriceUpper;
-        sqrtPriceLowerX96 = initialSQRTPriceLower;
+        tickUpper = _tickUpper;
+        tickLower = _tickLower;
     }
 
     IMorpho public constant morpho =
