@@ -27,13 +27,13 @@ forge install
 ### Build
 
 ```shell
-$ forge build
+forge build
 ```
 
 ### Format
 
 ```shell
-$ forge fmt
+forge fmt
 ```
 
 ### Test all project
