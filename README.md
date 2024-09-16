@@ -24,9 +24,19 @@ After trades executed, any excess liquidity is quickly redeposited into Morpho t
 forge install
 ```
 
-#### Testing
+### Build
 
-Test all project
+```shell
+$ forge build
 ```
-make ta
+
+### Format
+
+```shell
+$ forge fmt
+```
+
+### Test all project
+```
+make test_all
 ```
